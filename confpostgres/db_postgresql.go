@@ -5,6 +5,7 @@ import (
 
 	"github.com/dk-sirius/sqlxx"
 	"github.com/jmoiron/sqlx"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type PostgresSql struct {
@@ -16,6 +17,11 @@ func (executor *PostgresSql) ConnYAML(yaml string) *sqlx.DB {
 	des, err := executor.ConfigByYaml(yaml)
 	if err != nil {
 		panic(err)
+	}
+	// 环境变量存在则依据环境变量为主
+	err = envconfig.Process(sqlxx.DB_TYPE_POSTGRES.String(), des)
+	if err != nil {
+		fmt.Println(err)
 	}
 	db, err := sqlx.Open(driverName, fmt.Sprintf("%v", des))
 	if err != nil {
@@ -31,7 +37,13 @@ func (executor *PostgresSql) ConnYAML(yaml string) *sqlx.DB {
 
 func (executor *PostgresSql) Conn() *sqlx.DB {
 	driverName := fmt.Sprintf("%v", sqlxx.DB_TYPE_POSTGRES)
-	db, err := sqlx.Open(driverName, fmt.Sprintf("%v", executor.DBDescriptor))
+	// 环境变量存在则依据环境变量为主
+	des := &executor.DBDescriptor
+	err := envconfig.Process(sqlxx.DB_TYPE_POSTGRES.String(), des)
+	if err != nil {
+		fmt.Println(err)
+	}
+	db, err := sqlx.Open(driverName, fmt.Sprintf("%v", des))
 	if err != nil {
 		panic(err)
 	}
